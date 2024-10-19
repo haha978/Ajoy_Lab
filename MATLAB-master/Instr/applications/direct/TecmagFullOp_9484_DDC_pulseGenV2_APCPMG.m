@@ -254,9 +254,8 @@ end
     [PB_seg1(1,1), PB_seg1(2,1)] = deal(0, 1);
     [PB_seg1(1,2), PB_seg1(2,2)] = deal(start_time, 200e-6);
     PB_seg2 = zeros(2, 2);
-    %%set AC field parameter
-    idx = cmdBytes(2)-1;
     
+    %NO AC field being applied
     reso_freq = 1/((lengths(2) + spacings(2))*2);
     AC_dict.freq = reso_freq;
     AC_dict.Vpp = 0;
