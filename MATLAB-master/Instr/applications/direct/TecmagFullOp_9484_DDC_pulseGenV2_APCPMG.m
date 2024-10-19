@@ -230,10 +230,10 @@ end
     % ---------------------------------------------------------------------
     sampleRateDAC_freq = 675000000;
     tau = 20e-6;
-    amps = [0.5 0.5 0.5 0.5 0.5];
+    amps = [1 1 1 1 1];
     frequencies = [0 0 0 0 0];
     pi = cmdBytes(3)*1e-6;
-    lengths = 2*[pi/2 pi pi pi pi];
+    lengths = [pi/2 pi pi pi pi];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 -90 90 90 -90];
     mods = [0 0 0 0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
@@ -243,7 +243,7 @@ end
     markers2 = [0 0 0 0 0];
     trigs = [0 1 1 1 1]; %acquire on every "pi" pulse
     reps = [1 1 1 1 1];
-    repeatSeq = [1 500 2000]; % how many times to repeat the block of pulses
+    repeatSeq = [1 200 2000]; % how many times to repeat the block of pulses
     
     
     %%set PB parameter
