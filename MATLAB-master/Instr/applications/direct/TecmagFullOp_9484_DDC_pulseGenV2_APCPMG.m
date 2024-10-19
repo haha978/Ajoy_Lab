@@ -246,7 +246,7 @@ end
     reps = [1 1 1 1 1];
     repeatSeq = [1 200 2000]; % how many times to repeat the block of pulses
     repeatSeq_l = (5:5:200);
-    repeatSeq(1) = repeatSeq_l(idx);
+    repeatSeq(2) = repeatSeq_l(idx);
     
     %%set PB parameter
     start_time = lengths(1) + spacings(1) + lengths(2)/2 + (lengths(2) + spacings(2))*10000;
