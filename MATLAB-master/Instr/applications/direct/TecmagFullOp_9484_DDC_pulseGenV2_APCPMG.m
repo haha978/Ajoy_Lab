@@ -228,6 +228,7 @@ end
     % ---------------------------------------------------------------------
     % RF Pulse Config
     % ---------------------------------------------------------------------
+    idx = cmdBytes(2);
     sampleRateDAC_freq = 675000000;
     tau = 20e-6;
     amps = [1 1 1 1 1];
@@ -244,7 +245,8 @@ end
     trigs = [0 1 1 1 1]; %acquire on every "pi" pulse
     reps = [1 1 1 1 1];
     repeatSeq = [1 200 2000]; % how many times to repeat the block of pulses
-    
+    repeatSeq_l = (5:5:200);
+    repeatSeq(1) = repeatSeq_l(idx);
     
     %%set PB parameter
     start_time = lengths(1) + spacings(1) + lengths(2)/2 + (lengths(2) + spacings(2))*10000;
