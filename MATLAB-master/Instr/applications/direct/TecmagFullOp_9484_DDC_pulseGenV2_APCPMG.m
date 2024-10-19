@@ -32,6 +32,7 @@ measurementTimeSeconds = 7; %Integer
 delay = 0.0000038; % dead time
 global bits
 bits = 16;
+number_pi = pi;
 
 
 % remoteAddr = '192.168.1.2'; % old computer
@@ -228,14 +229,14 @@ end
     % RF Pulse Config
     % ---------------------------------------------------------------------
     sampleRateDAC_freq = 675000000;
-    tau = 50e-6;
-    amps = [1 1 1 1 1];
+    tau = 20e-6;
+    amps = [0.5 0.5 0.5 0.5 0.5];
     frequencies = [0 0 0 0 0];
     pi = cmdBytes(3)*1e-6;
-    lengths = [pi/2 pi pi pi pi];
+    lengths = 2*[pi/2 pi pi pi pi];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 -90 90 90 -90];
-    mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
+    mods = [0 0 0 0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
     spacings = [tau 2*tau 2*tau 2*tau 2*tau];
     spacings = round_to_DAC_freq(spacings, sampleRateDAC_freq, 64);
     markers = [1 1 1 1 1]; %always keep these on
@@ -569,15 +570,21 @@ end
                 
                 curr_t = reps(1)*(lengths(1)+spacings(1));
                 time_axis = [];
-                for i = (1:repeatSeq(2))
-                    for idx = (2: 7)
+                for i  = (1:repeatSeq(2))
+                    for idx = (2: 3)
                         curr_t = curr_t + reps(idx)*(lengths(idx) + spacings(idx));
-                        if idx == 7
-                            time_axis(end+1) = curr_t;
-                        end
+                        time_axis(end+1) = curr_t;
                     end
-                end                                
-                phase_base = mean(relPhase(1)); % take average phase during initial spin-locking to be x-axis
+                end
+                
+                for i  = (1:repeatSeq(3))
+                    for idx = (4: 5)
+                        curr_t = curr_t + reps(idx)*(lengths(idx) + spacings(idx));
+                        time_axis(end+1) = curr_t;
+                    end
+                end
+                
+                phase_base = mean(relPhase(1)) - number_pi/2; % take average phase during initial spin-locking to be x-axis
                 relPhase = relPhase - phase_base; % shift these values so phase starts at 0 (x-axis)
                 relPhase = phase_wrap_pi_to_m_pi(relPhase);
                 try
