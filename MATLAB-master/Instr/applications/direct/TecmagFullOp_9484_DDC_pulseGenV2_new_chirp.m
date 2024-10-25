@@ -987,7 +987,9 @@ end
 function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits)            
 
     t = 0:1/sampleRateDAC:rampTime;
-    dacWave = chirp(t,fStart,rampTime,fStop);
+%     dacWave = chirp(t,fStart,rampTime,fStop);
+    bow_coordinate = [rampTime/2-dt,0.1];
+    dacWave = lightning_chirp(t,fStart,rampTime,fStop, bow_coordinate);
     seglenTrunk = (floor(length(dacWave)/ 64))*64;
     dacWave = dacWave(1:seglenTrunk);
     dacWav = ampScale(bits, dacWave);
