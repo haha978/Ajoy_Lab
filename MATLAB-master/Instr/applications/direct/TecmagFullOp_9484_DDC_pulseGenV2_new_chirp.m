@@ -765,7 +765,7 @@ end
                 sweep_freq = cmdBytes(5);
                 sweep_sigma = cmdBytes(6);
                 symm = cmdBytes(7);
-%                 srs_freq = cmdBytes(8); % should be 0.3625e9
+                scan_idx = cmdBytes(8); % should be 0.3625e9
                 srs_freq = 0.3625e9; % new value for good chirp
                 srs_amp = cmdBytes(9);
                 pol_times = [cmdBytes(10) cmdBytes(11) cmdBytes(12) cmdBytes(13) cmdBytes(14) cmdBytes(15)];
@@ -808,8 +808,8 @@ end
                 chirps{2}.segLen = length(chirps{2}.dacSignal);
                 chirps{1}.segm = 1;
                 chirps{2}.segm = 2;
-                chirps{1}.srs_freq = 0.3625e9;
-                chirps{2}.srs_freq = 0.3625e9;
+                chirps{1}.srs_freq = srs_freq;
+                chirps{2}.srs_freq = srs_freq;
                 fprintf('waveform length - ');
                 fprintf(num2str(length(chirps{1}.dacSignal)));
                 fprintf('\n') ;
@@ -988,7 +988,8 @@ function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits)
 
     t = 0:1/sampleRateDAC:rampTime;
 %     dacWave = chirp(t,fStart,rampTime,fStop);
-    bow_coordinate = [rampTime/2-dt,0.1];
+    fBw = fStop - fStart;
+    bow_coordinate = [rampTime/2-dt,fBw/2];
     dacWave = lightning_chirp(t,fStart,rampTime,fStop, bow_coordinate);
     seglenTrunk = (floor(length(dacWave)/ 64))*64;
     dacWave = dacWave(1:seglenTrunk);
