@@ -794,6 +794,10 @@ end
                 
                 inst.SendScpi(":INIT:CONT ON");
                 assert(res.ErrCode == 0);
+
+                
+
+
                                 
                 rampTime = 1/sweep_freq;
                 fCenter = awg_center_freq - srs_freq;
@@ -801,8 +805,21 @@ end
                 disp(['fstart = ' num2str(fStart)]);
                 fStop = fCenter + 0.5*awg_bw_freq;
                 dt = 1/sampleRateDAC;
+
+
+                %build understandable parameters for lightnigh sweep
+                dfdt_opt = awg_bw_freq/rampTime;
                 
-                chirps{1}.dacSignal = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits);   
+                % build experiment parameters
+                [xind,yind] = experimentIndexToParams(scan_idx);
+                xrange = 9;
+                yrange = 9;
+                x = xind/xrange*rampTime/2 % ranges between 0 and rampTime/2
+                y = yind/yrange*x  % ranges between 0 and x
+                bow_coordinate = [x-y, x*dfdt_opt]
+
+
+                chirps{1}.dacSignal = makeChirp(sampleRateDAC, rampTime-2*y, dt, fStart, fStop, bits, bow_coordinate);   
                 chirps{2}.dacSignal = fliplr(chirps{1}.dacSignal);
                 chirps{1}.segLen = length(chirps{1}.dacSignal);
                 chirps{2}.segLen = length(chirps{2}.dacSignal);
@@ -984,12 +1001,21 @@ function sine = addSinePulse(segment, starttime, dt, pulseDuration, freq, phase,
     end
 end
 
-function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits)            
+
+function [x,y] = experimentIndexToParams(experimentIndex)
+    % experiment index ranges 1:1:100
+    % x, y range 0,9
+
+    experimentIndex = experimentIndex - 1;
+    x = mod(experimentIndex, 10);
+    y = floor(experimentIndex / 10);
+end
+
+function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits, bow_coordinate)            
 
     t = 0:1/sampleRateDAC:rampTime;
 %     dacWave = chirp(t,fStart,rampTime,fStop);
-    fBw = fStop - fStart;
-    bow_coordinate = [rampTime/2-dt,fBw/2];
+
     dacWave = lightning_chirp(t,fStart,rampTime,fStop, bow_coordinate);
     seglenTrunk = (floor(length(dacWave)/ 64))*64;
     dacWave = dacWave(1:seglenTrunk);
