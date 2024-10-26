@@ -758,7 +758,7 @@ end
                 % Download chirp waveform of 1024 points to segment 1 of channel 1
                 % ---------------------------------------------------------------------                
                 global sampleRateDAC
-                sampleRateDAC = 9e9
+                sampleRateDAC = 9e9;
                 awg_center_freq = cmdBytes(2);
                 awg_bw_freq = cmdBytes(3);
                 awg_amp = cmdBytes(4);
@@ -794,10 +794,6 @@ end
                 
                 inst.SendScpi(":INIT:CONT ON");
                 assert(res.ErrCode == 0);
-
-                
-
-
                                 
                 rampTime = 1/sweep_freq;
                 fCenter = awg_center_freq - srs_freq;
@@ -811,15 +807,16 @@ end
                 dfdt_opt = awg_bw_freq/rampTime;
                 
                 % build experiment parameters
-                [xind,yind] = experimentIndexToParams(scan_idx);
-                xrange = 9;
-                yrange = 9;
-                x = xind/xrange*rampTime/2 % ranges between 0 and rampTime/2
-                y = yind/yrange*x  % ranges between 0 and x
-                bow_coordinate = [x-y, x*dfdt_opt]
-
-
-                chirps{1}.dacSignal = makeChirp(sampleRateDAC, rampTime-2*y, dt, fStart, fStop, bits, bow_coordinate);   
+                xind = mod(scan_idx, 10);
+                yind = fix(scan_idx/10);
+                xrange = 10;
+                yrange = 10;
+                sweep_reduction_t = xind/xrange*rampTime/2; % ranges between 0 and rampTime/2
+                slope_tradeoff_t = yind/yrange*sweep_reduction_t;  % ranges between 0 and x
+                bow_coordinate = [sweep_reduction_t-slope_tradeoff_t+dt, (sweep_reduction_t+dt)*dfdt_opt];
+                newrampTime = rampTime - 2*slope_tradeoff_t;
+                
+                chirps{1}.dacSignal = makeChirp(sampleRateDAC, newrampTime, dt, fStart, fStop, bits, bow_coordinate);   
                 chirps{2}.dacSignal = fliplr(chirps{1}.dacSignal);
                 chirps{1}.segLen = length(chirps{1}.dacSignal);
                 chirps{2}.segLen = length(chirps{2}.dacSignal);
@@ -856,11 +853,19 @@ inst.SendScpi(':TASK:COMP:WRITE');
 fprintf(1, 'SEQUENCE CREATED!\n');
 
 fprintf(1, 'SETTING AWG OUTPUT\n');
-
+38
 inst.SendScpi(':SOUR:FUNC:MODE TASK');
 
 res = inst.SendScpi(':OUTP ON');
 assert(res.ErrCode == 0);
+% Save data
+a = datestr(now,'yyyy-mm-dd-HHMMSS');
+fn = sprintf([a,'_lighting_chirp_Proteus']);
+fprintf('Writing data to Z:.....\n');
+save(['Z:\' fn],'awg_center_freq','awg_bw_freq','srs_freq', ...
+    'rampTime', 'newrampTime', 'sweep_reduction_t', 'slope_tradeoff_t');
+fprintf('Save complete\n');
+
 for iter = (1:10)
     Pines_write(2021, '6');
 end                
@@ -999,16 +1004,6 @@ function sine = addSinePulse(segment, starttime, dt, pulseDuration, freq, phase,
     else
         error('Pulse out of bounds');
     end
-end
-
-
-function [x,y] = experimentIndexToParams(experimentIndex)
-    % experiment index ranges 1:1:100
-    % x, y range 0,9
-
-    experimentIndex = experimentIndex - 1;
-    x = mod(experimentIndex, 10);
-    y = floor(experimentIndex / 10);
 end
 
 function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits, bow_coordinate)            

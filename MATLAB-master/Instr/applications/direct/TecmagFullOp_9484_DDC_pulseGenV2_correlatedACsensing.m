@@ -134,7 +134,10 @@ end
     fprintf('initializing Tektronix AFG 31000\n');
     tek = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019986::INSTR");
     tek2 = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019987::INSTR");
-    
+    try
+        tekRF = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019986::INSTR");
+    end
+        
     fprintf("Tektronix Initialization complete\n");
     
     %% Measurement Loop
@@ -147,6 +150,17 @@ end
         fclose(u2);
         connect=off;
         fprintf('Server not connected\n');
+    end
+    
+    u3 = udp('127.0.0.1', 'RemotePort', 12345, 'LocalPort', 12346);  % Local UDP object
+    u3status = 0;
+    try
+        fopen(u3);
+        fprintf('Server u3 connected and started\n');
+        u3status = 1;
+    catch
+        fclose(u3);
+        fprintf('Server u3 not connected\n');
     end
     
 %     Loop to repeatedly wait for messages and send replies
@@ -225,7 +239,11 @@ end
     fprintf('Clocks synced\n');
     tek.output_off()
     tek2.output_off()
-            case 2 % Aquire on trig
+    try
+        tekRF.output_off()
+    end
+    
+        case 2 % Aquire on trig
                 
     % ---------------------------------------------------------------------
     % RF Pulse Config
@@ -240,7 +258,7 @@ end
     vertices_l = [2 3 4 5 6 8 12 14];
     vertices = 4;%vertices_l(idx);
     first_angle_arr = [0 180 90 108.47 90 130.90 90 127.12 90 114.18 122.73 114.89 90 107.22];
-    first_angle = 180/vertices;%first_angle_arr(vertices);
+    %first_angle = 180/vertices;%first_angle_arr(vertices);
     
     amps = [1 1];
     frequencies = [0 0];
@@ -248,9 +266,9 @@ end
     
     spacing = 100e-6;
     analyte_freq_l = 10.^(0:0.25:4);
-    analyte_freq = analyte_freq_l(idx);
+    %analyte_freq = analyte_freq_l(idx);
     
-    lengths = [pi/2 pi/2];
+    lengths = [pi/2 pi*2/3*idx/20];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 90];
     mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
@@ -263,7 +281,7 @@ end
     trigs = [0 1]; %acquire on every "pi" pulse
     
 %     reps = [1 194174];
-    reps = [1 200000];
+    reps = [1 100000];
     repeatSeq = [1]; % how many times to repeat the block of pulses
     
     
@@ -279,18 +297,24 @@ end
     PB_seg2 = zeros(2, 2);
     [PB_seg2(1,1), PB_seg2(2,1)] = deal(0, 1);
     [PB_seg2(1,2), PB_seg2(2,2)] = deal(start_time+2, 150e-6);
+    PB_seg3 = zeros(2, 2);
+    [PB_seg3(1,1), PB_seg3(2,1)] = deal(0, 1);
+    [PB_seg3(1,2), PB_seg3(2,2)] = deal(start_time+3, 150e-6);
     
     %%set AC field parameter
 
-    AC_dict2.freq = 100;%-0.5;
-    AC_dict2.Vpp = 0.3; 
-    AC_dict2.DC_offset = 0;
-    AC_dict2.phase = first_angle;
-    AC_dict.freq = trajectory_freq;%+100;
-    AC_dict.Vpp = 0.1;
-    AC_dict.DC_offset = 0;
-    AC_dict.phase = 0;
+    AC_dict.freq = trajectory_freq;%+0.25;%+100;
+    AC_dict.Vpp = 0.3;
+    AC_dict.DC_offset = 0;%.05*idx;
+    AC_dict.phase = 0;%first_angle;
     
+    AC_dict2.freq = 100;%-0.5;
+    AC_dict2.Vpp = 0.05; 
+    AC_dict2.DC_offset = 0;
+    AC_dict2.phase = 0;
+    
+    %ch2 = 2;
+    %PB(ch2) = PB_seg3;
     PB(ch3) = PB_seg1;
     PB(ch4) = PB_seg2;
     %no need to initialize both channels
@@ -439,6 +463,9 @@ end
                 
             case 3 % Measure
                 inst.SendScpi(sprintf(':DIG:CHAN 2'));
+                if u3status == 1
+                    fwrite(u3, "start_output");  % Send a UDP packet to the local Python script
+                end
                 fprintf('Triggering pulse sequence\n');
                 rc = inst.SendScpi('*TRG');
                 assert(rc.ErrCode == 0);
@@ -690,8 +717,8 @@ end
                     p1=plot_preliminaries(time_axis,(relPhase),2,'noline');
                     set(p1,'markersize',1.25);
                     plot_labels('Time [s]', 'Phase [au]');
-                    set(gca,'ylim',[-0.1,0.1]);
-                    set(gca,'xlim',[1.8,3]);
+                    %set(gca,'ylim',[-0.1,0.1]);
+                    %set(gca,'xlim',[1.8,3]);
 %                     start_fig(1,[3 2]);
 %                     p1=plot_preliminaries(time_axis,pulseAmp,1,'nomarker');
 %                     set(p1,'linewidth',1);
@@ -705,13 +732,14 @@ end
                     set(gca,'ylim',[0,max(pulseAmp)*1.05]);
                     plot_labels('Time [s]', 'Signal [au]');
                     
-%                     start_fig(2,[5 2]);
+                    %xyza
+                    start_fig(2,[5 2]);
 %                     p1=plot_preliminaries(time_axis,zeros(1,length(time_axis)),5,'nomarker');
 %                     set(p1,'linestyle','--'); set(p1,'linewidth',1);
-%                     p1=plot_preliminaries(time_axis,pulseAmp.*cos(relPhase),1,'noline');
-%                     set(p1,'markersize',1);
-%                     set(gca,'ylim',[-max(pulseAmp)*1.05,max(pulseAmp)*1.05]);
-%                     plot_labels('Time [s]', 'Signal [au]');
+                    p1=plot_preliminaries(time_axis,pulseAmp.*cos(relPhase),1,'noline');
+                    set(p1,'markersize',1);
+                    set(gca,'ylim',[-max(pulseAmp)*1.05,max(pulseAmp)*1.05]);
+                    plot_labels('Time [s]', 'Signal [au]');
                     
 %                     start_fig(13,[5 1]);
 %                     p1=plot_preliminaries(time_axis,pulseAmp,1,'nomarker');
@@ -734,6 +762,9 @@ end
                 fprintf('Save complete\n');
                 tek.output_off() 
                 tek2.output_off()
+                try
+                    tekRF.output_off()
+                end
             case 4 % Cleanup, save and prepare for next experiment
                 rc = inst.SendScpi(':DIG:INIT OFF');
                 assert(rc.ErrCode == 0);
