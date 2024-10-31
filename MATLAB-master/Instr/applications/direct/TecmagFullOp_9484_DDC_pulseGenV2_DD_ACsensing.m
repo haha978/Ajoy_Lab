@@ -233,10 +233,10 @@ end
     ch3 = 3;
     ch4 = 4;
     
-    idx = cmdBytes(2);
-    
-    pi_mult_l = [0.97 1.03 1.07 0.95 1.05 1 0.92];
-    pi = cmdBytes(3)*1e-6;
+    idx = cmdBytes(2)-1;
+    pi_mult_l = (0.97:0.01:1.03);
+    pi_mult_idx = fix(idx/9)+1;
+    pi = cmdBytes(3)*1e-6*pi_mult_l(pi_mult_idx);
     spacing = 100e-6;
 %     lengthsDD = pi/2*cat(2,ones(1,16),[2]);
 %     phasesDD = [270 0 180 90 90 0 180 270 270 180 0 90 90 180 0 270 0];
@@ -247,8 +247,8 @@ end
 %     spacingsDD = spacing*[1 1 1 1 2 1 1 1 1 2];
     %1/T 90 phase
     lengthsDD = pi*repmat([1 1/2 1/2],1,24);
-    phasesDD = [180 180 270 0 0 270 0 0 270 0 0 90 180 180 270 180 ...
-    180 270 180 180 90 180 180 270 0 0 90 180 180 90 180 180 90 0 0];
+    phasesDD = [180 180 90 0 0 90 0 0 90 0 0 270 180 180 90 180 ...
+    180 90 180 180 270 180 180 90 0 0 270 180 180 270 180 180 270 0 0];
     phasesDDinv = flip(mod(phasesDD+180,360),2);
     phasesDD = cat(2,phasesDD, phasesDDinv, [90 270]);
     spacingsDD = repmat([spacing 0.05e-6 spacing],1,24);
@@ -263,7 +263,7 @@ end
     else
         repDD = 1;
         lengths = {[pi/2 pi/2] lengthsDD};
-        phases = {[45 135] phasesDD};
+        phases = {[135 45] phasesDD};
         spacings = {[5e-6 spacing] spacingsDD};
         trigs = {[0 1] repmat([1,0,1],1,24)};
     end
@@ -302,6 +302,7 @@ end
     %%set AC field parameter
     
     AC_dict.freq = resFreq;
+    Vpp_l = (0:0.001:0.005);
     AC_dict.Vpp = 0;
     AC_dict.DC_offset = 0;
     AC_dict.phase = 90;
@@ -316,8 +317,9 @@ end
     
     
 %                 tof = -1000*cmdBytes(2);
-                tof_inc_l = [-100 100 -500 500 0 -50 50];
-                tof = cmdBytes(6)+tof_inc_l(idx);
+                tof_err_l = (-100:25:100);
+                tof_err_idx = mod(idx,9)+1;
+                tof = cmdBytes(6)+tof_err_l(tof_err_idx);
                 
                 ch=1;
                 initializeAWG(ch);
