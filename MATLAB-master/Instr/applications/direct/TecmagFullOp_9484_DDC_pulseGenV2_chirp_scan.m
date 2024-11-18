@@ -766,7 +766,7 @@ end
                 idx = cmdBytes(8); % should be 0.3625e9
                 
                 awg_center_freq_l = (3.6e9:5000000:3.84e9);
-                sweep_freq_l = (200:200:1000);
+                sweep_freq_l = (600:200:1400);
                 center_freq_idx = mod(idx, 49)+1;
                 sweep_freq_idx = fix(idx/49)+1;
                 
