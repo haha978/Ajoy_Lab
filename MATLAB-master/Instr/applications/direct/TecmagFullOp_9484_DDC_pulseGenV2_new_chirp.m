@@ -794,29 +794,35 @@ end
                 
                 inst.SendScpi(":INIT:CONT ON");
                 assert(res.ErrCode == 0);
-                                
+                
+                
+                sweep_freq_idx = mod(scan_idx, 5)+1;
+                freq_l_idx = fix(scan_idx/5)+1;
+                sweep_freq_l = (600: 300: 1800);
+                
+                
+                sweep_freq = sweep_freq_l(sweep_freq_idx);
+                
                 rampTime = 1/sweep_freq;
-                fCenter = awg_center_freq - srs_freq;
-                fStart = fCenter - 0.5*awg_bw_freq;
-                disp(['fstart = ' num2str(fStart)]);
-                fStop = fCenter + 0.5*awg_bw_freq;
-                dt = 1/sampleRateDAC;
-
-
-                %build understandable parameters for lightnigh sweep
-                dfdt_opt = awg_bw_freq/rampTime;
+                awg_center_freq_l1 = [3.75e9, 3.780e9, 3.8e9];
+                awg_center_freq_l2 = [3.75e9, 3.775e9, 3.780e9];
+                awg_center_freq_l3 = [3.75e9, 3.770e9, 3.780e9];
                 
-                % build experiment parameters
-                xind = mod(scan_idx, 10);
-                yind = fix(scan_idx/10);
-                xrange = 10;
-                yrange = 10;
-                sweep_reduction_t = xind/xrange*rampTime/2; % ranges between 0 and rampTime/2
-                slope_tradeoff_t = yind/yrange*sweep_reduction_t;  % ranges between 0 and x
-                bow_coordinate = [sweep_reduction_t-slope_tradeoff_t+dt, (sweep_reduction_t+dt)*dfdt_opt];
-                newrampTime = rampTime - 2*slope_tradeoff_t;
+                awg_center_freq_arr = [awg_center_freq_l1 ; awg_center_freq_l2; awg_center_freq_l3];
+                awg_center_freq_l = awg_center_freq_arr(freq_l_idx, :);
                 
-                chirps{1}.dacSignal = makeChirp(sampleRateDAC, newrampTime, dt, fStart, fStop, bits, bow_coordinate);   
+                
+                rampTime_l = [];
+                fCenter_l = awg_center_freq_l;
+                fStart_l = [];
+                fStop_l = [];
+                for idx = (1: length(fCenter_l))
+                    fStart_l(end+1) = fCenter_l(idx) - awg_bw_freq/2 - srs_freq;
+                    fStop_l(end+1) = fCenter_l(idx) + awg_bw_freq/2 - srs_freq;
+                    rampTime_l(end+1) = rampTime;
+                end
+                dacSignal = makeChirp(sampleRateDAC, fStart_l, rampTime_l, fStop_l, bits);
+                chirps{1}.dacSignal = dacSignal;
                 chirps{2}.dacSignal = fliplr(chirps{1}.dacSignal);
                 chirps{1}.segLen = length(chirps{1}.dacSignal);
                 chirps{2}.segLen = length(chirps{2}.dacSignal);
@@ -853,7 +859,7 @@ inst.SendScpi(':TASK:COMP:WRITE');
 fprintf(1, 'SEQUENCE CREATED!\n');
 
 fprintf(1, 'SETTING AWG OUTPUT\n');
-38
+
 inst.SendScpi(':SOUR:FUNC:MODE TASK');
 
 res = inst.SendScpi(':OUTP ON');
@@ -862,8 +868,8 @@ assert(res.ErrCode == 0);
 a = datestr(now,'yyyy-mm-dd-HHMMSS');
 fn = sprintf([a,'_lighting_chirp_Proteus']);
 fprintf('Writing data to Z:.....\n');
-save(['Z:\' fn],'awg_center_freq','awg_bw_freq','srs_freq', ...
-    'rampTime', 'newrampTime', 'sweep_reduction_t', 'slope_tradeoff_t');
+save(['Z:\' fn],'fStart_l','fStop_l','srs_freq', ...
+    'rampTime_l');
 fprintf('Save complete\n');
 
 for iter = (1:10)
@@ -1006,12 +1012,10 @@ function sine = addSinePulse(segment, starttime, dt, pulseDuration, freq, phase,
     end
 end
 
-function dacWav = makeChirp(sampleRateDAC, rampTime, dt, fStart, fStop, bits, bow_coordinate)            
-
-    t = 0:1/sampleRateDAC:rampTime;
+function dacWav = makeChirp(sampleRateDAC, fStart_l, rampTime_l, fStop_l, bits)            
 %     dacWave = chirp(t,fStart,rampTime,fStop);
 
-    dacWave = lightning_chirp(t,fStart,rampTime,fStop, bow_coordinate);
+    [time, dacWave] = concated_chirp(sampleRateDAC,fStart_l,rampTime_l,fStop_l);
     seglenTrunk = (floor(length(dacWave)/ 64))*64;
     dacWave = dacWave(1:seglenTrunk);
     dacWav = ampScale(bits, dacWave);
