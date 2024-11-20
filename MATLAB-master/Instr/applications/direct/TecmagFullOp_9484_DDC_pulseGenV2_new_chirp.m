@@ -795,33 +795,30 @@ end
                 inst.SendScpi(":INIT:CONT ON");
                 assert(res.ErrCode == 0);
                 
+                sweep_freq_idx = mod(scan_idx, 9)+1;
+                freq_l_idx = fix(scan_idx/9)+1;
                 
-                sweep_freq_idx = mod(scan_idx, 5)+1;
-                freq_l_idx = fix(scan_idx/5)+1;
-                sweep_freq_l = (600: 300: 1800);
-                
-                
+                sweep_freq_l = (200: 200: 1800);
                 sweep_freq = sweep_freq_l(sweep_freq_idx);
+                awg_center_freq_l1 = [3.75e9, 3.780e9];
+                awg_center_freq_l2 = [3.75e9, 3.770e9, 3.780e9];
                 
+                if freq_l_idx == 1
+                    awg_center_freq_l = awg_center_freq_l1;
+                elseif freq_l_idx == 2
+                    awg_center_freq_l = awg_center_freq_l2;
+                end
                 rampTime = 1/sweep_freq;
-                awg_center_freq_l1 = [3.75e9, 3.780e9, 3.8e9];
-                awg_center_freq_l2 = [3.75e9, 3.775e9, 3.780e9];
-                awg_center_freq_l3 = [3.75e9, 3.770e9, 3.780e9];
-                
-                awg_center_freq_arr = [awg_center_freq_l1 ; awg_center_freq_l2; awg_center_freq_l3];
-                awg_center_freq_l = awg_center_freq_arr(freq_l_idx, :);
                 
                 
-                rampTime_l = [];
                 fCenter_l = awg_center_freq_l;
                 fStart_l = [];
                 fStop_l = [];
                 for idx = (1: length(fCenter_l))
                     fStart_l(end+1) = fCenter_l(idx) - awg_bw_freq/2 - srs_freq;
                     fStop_l(end+1) = fCenter_l(idx) + awg_bw_freq/2 - srs_freq;
-                    rampTime_l(end+1) = rampTime;
                 end
-                dacSignal = makeChirp(sampleRateDAC, fStart_l, rampTime_l, fStop_l, bits);
+                dacSignal = makeChirp(sampleRateDAC, fStart_l, rampTime, fStop_l, bits);
                 chirps{1}.dacSignal = dacSignal;
                 chirps{2}.dacSignal = fliplr(chirps{1}.dacSignal);
                 chirps{1}.segLen = length(chirps{1}.dacSignal);
@@ -866,10 +863,10 @@ res = inst.SendScpi(':OUTP ON');
 assert(res.ErrCode == 0);
 % Save data
 a = datestr(now,'yyyy-mm-dd-HHMMSS');
-fn = sprintf([a,'_lighting_chirp_Proteus']);
+fn = sprintf([a,'_chirp_Proteus']);
 fprintf('Writing data to Z:.....\n');
 save(['Z:\' fn],'fStart_l','fStop_l','srs_freq', ...
-    'rampTime_l');
+    'rampTime');
 fprintf('Save complete\n');
 
 for iter = (1:10)
@@ -1012,10 +1009,10 @@ function sine = addSinePulse(segment, starttime, dt, pulseDuration, freq, phase,
     end
 end
 
-function dacWav = makeChirp(sampleRateDAC, fStart_l, rampTime_l, fStop_l, bits)            
+function dacWav = makeChirp(sampleRateDAC, fStart_l, rampTime, fStop_l, bits)            
 %     dacWave = chirp(t,fStart,rampTime,fStop);
 
-    [time, dacWave] = concated_chirp(sampleRateDAC,fStart_l,rampTime_l,fStop_l);
+    [time, dacWave] = added_chirp(sampleRateDAC,fStart_l,rampTime,fStop_l);
     seglenTrunk = (floor(length(dacWave)/ 64))*64;
     dacWave = dacWave(1:seglenTrunk);
     dacWav = ampScale(bits, dacWave);
