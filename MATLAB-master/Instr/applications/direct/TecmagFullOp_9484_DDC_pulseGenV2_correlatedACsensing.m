@@ -268,7 +268,7 @@ end
     analyte_freq_l = 10.^(0:0.25:4);
     %analyte_freq = analyte_freq_l(idx);
     
-    lengths = [pi/2 pi*2/3*idx/20];
+    lengths = [pi/2 pi/2];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 90];
     mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
@@ -303,13 +303,26 @@ end
     
     %%set AC field parameter
 
-    AC_dict.freq = trajectory_freq;%+0.25;%+100;
-    AC_dict.Vpp = 0.3;
-    AC_dict.DC_offset = 0;%.05*idx;
+    AC_dict.freq = trajectory_freq+0.25;%+100;
+    
+    if idx<42
+        voltage = 0.02*(idx-5);
+        assert(abs(voltage)<0.75, 'offset voltage too high')
+        AC_dict.Vpp = 0.3;
+        AC_dict.DC_offset = voltage;          % idx 0 ... 36
+    elseif idx<93                             % idx 37 ... 88
+        voltage = 0.02*(idx-42);
+        assert(abs(voltage)<1.1, 'orbit voltage too high')
+        AC_dict.Vpp = voltage;
+        AC_dict.DC_offset = 0;
+    else
+        AC_dict.Vpp = 0.3;
+        AC_dict.DC_offset = 0;
+    end
     AC_dict.phase = 0;%first_angle;
     
     AC_dict2.freq = 100;%-0.5;
-    AC_dict2.Vpp = 0.05; 
+    AC_dict2.Vpp = 0.001; 
     AC_dict2.DC_offset = 0;
     AC_dict2.phase = 0;
     
@@ -825,10 +838,10 @@ end
 %                 pol_times = [t1 t2 t3];
 %                 pol_times = nonzeros(pol_times);
 %                 starting_pol_sign = 1;
-%                 
                 inst.SendScpi("*CLS")
                 inst.SendScpi("*RST")
                 res = inst.SendScpi(['INST:CHAN ' num2str(dacChanInd)]); % select channel 2
+                inst.SendScpi(':TRAC:ZERO:ALL');
                 assert(res.ErrCode == 0);
                 
                 % check if its the good variable bc im not sure
@@ -1250,6 +1263,7 @@ function initializeAWG(ch)
      inst.SendScpi(':SOUR:VOLT MAX');
      inst.SendScpi('SOUR:FUNC:MODE TASK');
      inst.SendScpi(':INIT:CONT ON');
+     inst.SendScpi(':TRAC:ZERO:ALL');
      res = inst.SendScpi(':TRAC:DEL:ALL');
      assert(res.ErrCode==0);
 end
