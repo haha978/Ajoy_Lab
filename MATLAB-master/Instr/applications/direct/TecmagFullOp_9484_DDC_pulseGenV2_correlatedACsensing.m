@@ -255,8 +255,9 @@ end
     ch4 = 4;
     
     idx = cmdBytes(2);
+    pi_idx = idx;
     vertices_l = [2 3 4 5 6 8 12 14];
-    vertices = 2;%vertices_l(idx);
+    vertices = 4;%vertices_l(idx);
     first_angle_arr = [0 180 90 108.47 90 130.90 90 127.12 90 114.18 122.73 114.89 90 107.22];
     %first_angle = 180/vertices;%first_angle_arr(vertices);
     
@@ -264,18 +265,35 @@ end
     frequencies = [0 0];
     pi = cmdBytes(3)*1e-6;
     
-    array = 100:0.05:112;                               % Create an array with values ranging from 107 to 110 with a step of 0.1
-    shuffledArray = array(randperm(length(array)));     % Randomly shuffle the array
-    index = mod(idx - 1, length(shuffledArray)) + 1;    % Use the index
-    pi_b = shuffledArray(index)*1e-6;                     % Get one of the pi values in a random order
+    %array = 100:0.05:112;                               % Create an array with values ranging from 107 to 110 with a step of 0.1
+    %shuffledArray = array(randperm(length(array)));     % Randomly shuffle the array
+    %index = mod(idx - 1, length(shuffledArray)) + 1;    % Use the index
+    %pi_b = shuffledArray(index)*1e-6;                     % Get one of the pi values in a random order
     %disp(array);
-    disp(['The pi value at the current index is: ', num2str(pi_b)]);
+    
+    rng(42);    % Set the random seed for reproducibility
+    %values_45 = normrnd(45, 10, [2000, 1]); % Generate values from normal distributions centered at 45, 90, and 135
+    %values_90 = normrnd(90, 10, [2000, 1]);
+    %values_135 = normrnd(135, 10, [2000, 1]);
+    %values = [values_45; values_90; values_135]; % Combine the values into a single array
+    
+    values = normrnd(90, 1.5, [2000, 1]);
+    values = values(values >= 40 & values <= 150); % Filter the values to be within the range [40, 150]
+    shuffled_indices = randperm(length(values)); % Shuffle the values
+    shuffled_values = values(shuffled_indices);
+    
+    SL_angle = shuffled_values(idx);
+    pi_b = pi*(shuffled_values(idx)/90);
+    
+    disp(['Current index is: ', num2str(idx)]);
+    disp(['The SL angle at the current index is: ', num2str(shuffled_values(idx))]);
+    disp(['The pi value at the current index is: ', num2str(pi_b*1000000)]);
     
     spacing = 100e-6;
     analyte_freq_l = 10.^(0:0.25:4);
     %analyte_freq = analyte_freq_l(idx);
     
-    lengths = [pi/2 2/vertices*pi*0.5];%[pi/2 pi/2];
+    lengths = [pi/2 pi_b*2/vertices];%[pi/2 pi/2];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 90];
     mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
@@ -784,7 +802,7 @@ end
                 % Save data
                 fprintf('Writing data to Z:.....\n');
                 save(['Z:\' fn],'pulseAmp','time_axis','relPhase','AC_dict','AC_dict2','lengths',...
-                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi','tacq');
+                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle');
                 fprintf('Save complete\n');
                 tek.output_off() 
                 tek2.output_off()
