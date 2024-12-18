@@ -394,6 +394,30 @@ end
                 
                 inst.SendScpi(sprintf(':DIG:DDC:CFR2 %d', 75.38e6+tof));
                 
+                
+                fprintf("set Tektronix 31000 as burst mode \n");
+                ncycles = round(reps(2)*(spacings(2) + lengths(2))*AC_dict.freq) + 10;
+                
+                %if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+                %    tek.burst_mode_trig_sinwave(AC_dict.freq, AC_dict.Vpp,...
+                %        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+                %end
+                
+                % this makes rectangle waves:
+                if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+                    tek.burst_mode_trig_rectwave(AC_dict.freq, AC_dict.Vpp,...
+                        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+                end
+                
+                %tek2.apply_DC(DC_V);
+                if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
+                    tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
+                        AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
+                fprintf("setting done\n");
+                end
+                
+                
+                
                 fprintf('Calculate and set data structures...\n');
                 
                 
@@ -459,6 +483,9 @@ end
                 
                 fprintf('Instr setup complete and ready to aquire\n');
                 
+                
+                
+                
                 %netArray = NET.createArray('System.UInt16', 2* readLen*numberOfPulses); %total array -- all memory needed
                 
 %                 rc = inst.SetAdcAcquisitionEn(on,off);
@@ -487,18 +514,7 @@ end
                 assert(rc.ErrCode == 0);
                 rc = inst.SendScpi(':DIG:INIT ON');
                
-                fprintf("set Tektronix 31000 as burst mode \n");
-                ncycles = round(reps(2)*(spacings(2) + lengths(2))*AC_dict.freq) + 10;
-                if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
-                    tek.burst_mode_trig_sinwave(AC_dict.freq, AC_dict.Vpp,...
-                        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
-                end
-                %tek2.apply_DC(DC_V);
-                if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
-                    tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
-                        AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
-                fprintf("setting done\n");
-                end
+               
                 
                 
                 
