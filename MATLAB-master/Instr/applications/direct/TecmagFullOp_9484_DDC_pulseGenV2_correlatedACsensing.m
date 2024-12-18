@@ -135,7 +135,9 @@ end
     tek = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019986::INSTR");
     tek2 = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019987::INSTR");
     try
-        tekRF = Tektronix_AFG_31000("USB0::0x0699::0x0355::C019986::INSTR");
+        tekRF = Tektronix_AFG_31000("USB0::0x0699::0x035A::B011535::INSTR");
+    catch
+        disp("tekRF not available");
     end
         
     fprintf("Tektronix Initialization complete\n");
@@ -345,14 +347,19 @@ end
 %         AC_dict.Vpp = 0.3;
 %         AC_dict.DC_offset = 0;
 %     end
-    AC_dict.Vpp = 0.3;
-    AC_dict.DC_offset = 0;
-    AC_dict.phase = 0;
+    AC_dict.Vpp         = 0.3;
+    AC_dict.DC_offset   = 0;
+    AC_dict.phase       = 0;
     
-    AC_dict2.freq = 100;%-0.5;
-    AC_dict2.Vpp = 0.15; 
-    AC_dict2.DC_offset = 0;
-    AC_dict2.phase = 0;
+    AC_dict2.freq       = 100;%-0.5;
+    AC_dict2.Vpp        = 0.15; 
+    AC_dict2.DC_offset  = 0;
+    AC_dict2.phase      = 0;
+    
+    AC_dictRF.freq      = 75352401.49;
+    AC_dictRF.Vpp       = 0.15;
+    AC_dictRF.DC_offset = 0;
+    AC_dictRF.phase     = 0;
     
     %ch2 = 2;
     %PB(ch2) = PB_seg3;
@@ -363,6 +370,36 @@ end
     fprintf("downloading pulseblaster sequence \n");
     generate_PB(PB, sampleRateDAC, inst);
     fprintf("PB download finished \n");
+    
+    fprintf("set Tektronix 31000 as burst mode \n");
+    ncycles = round(reps(2)*(spacings(2) + lengths(2))*AC_dict.freq) + 10;
+
+    %if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+    %    tek.burst_mode_trig_sinwave(AC_dict.freq, AC_dict.Vpp,...
+    %        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+    %end
+
+    % this makes rectangle waves:
+    if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+        tek.burst_mode_trig_rectwave(AC_dict.freq, AC_dict.Vpp,...
+            AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+    end
+
+    %tek2.apply_DC(DC_V);
+    if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
+        tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
+            AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
+    end
+    try
+        tekRF.output_off();
+        tekRF.init_AFG_RF(AC_dictRF.freq, AC_dictRF.Vpp, AC_dictRF.DC_offset, AC_dictRF.phase);
+    catch
+        disp('setting tekRF: error occurred');
+    end
+
+    fprintf("setting done\n");
+    
+    
     setNCO_IQ(ch3, 0, 0);
     setNCO_IQ(ch4, 0 ,0);
     
@@ -393,29 +430,6 @@ end
                 resp = inst.SendScpi(':SYST:ERR?');
                 
                 inst.SendScpi(sprintf(':DIG:DDC:CFR2 %d', 75.38e6+tof));
-                
-                
-                fprintf("set Tektronix 31000 as burst mode \n");
-                ncycles = round(reps(2)*(spacings(2) + lengths(2))*AC_dict.freq) + 10;
-                
-                %if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
-                %    tek.burst_mode_trig_sinwave(AC_dict.freq, AC_dict.Vpp,...
-                %        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
-                %end
-                
-                % this makes rectangle waves:
-                if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
-                    tek.burst_mode_trig_rectwave(AC_dict.freq, AC_dict.Vpp,...
-                        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
-                end
-                
-                %tek2.apply_DC(DC_V);
-                if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
-                    tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
-                        AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
-                fprintf("setting done\n");
-                end
-                
                 
                 
                 fprintf('Calculate and set data structures...\n');
@@ -818,7 +832,7 @@ end
                 % Save data
                 fprintf('Writing data to Z:.....\n');
                 save(['Z:\' fn],'pulseAmp','time_axis','relPhase','AC_dict','AC_dict2','lengths',...
-                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle');
+                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle', 'AC_dictRF');
                 fprintf('Save complete\n');
                 tek.output_off() 
                 tek2.output_off()

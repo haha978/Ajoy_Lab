@@ -14,6 +14,16 @@ classdef Tektronix_AFG_31000
             fprintf(obj.gpib_obj, "*CLS");
             fprintf(obj.gpib_obj, "*RST");
         end
+        
+        function init_AFG_RF(obj, freq, Vpp, DC_offset, phase)
+            fprintf(obj.gpib_obj, "SOUR1:FUNC SIN");
+            fprintf(obj.gpib_obj, sprintf("SOUR1:FREQ %.3f", freq));
+            disp(sprintf("SOUR1:FREQ %.3f", freq));
+            fprintf(obj.gpib_obj, sprintf("SOUR1:VOLT %.3f", Vpp));
+            disp(sprintf("SOUR1:VOLT %.3f", Vpp));
+            fprintf(obj.gpib_obj, sprintf("SOUR1:PHAS %dDEG", phase));
+            fprintf(obj.gpib_obj, sprintf("SOUR1:VOLT:LEV:IMM:OFFS %dV", DC_offset));
+        end
 
         function burst_mode_trig_sinwave(obj, freq, Vpp, DC_offset, phase, ncycles, add_external)
             %{
@@ -54,6 +64,7 @@ classdef Tektronix_AFG_31000
             fprintf(obj.gpib_obj, sprintf("VOLTAGE:AMPLITUDE %d", Vpp));
             fprintf(obj.gpib_obj, sprintf("VOLTAGE:OFFSET %d", DC_offset));
             fprintf(obj.gpib_obj, sprintf("PHASE:ADJUST %dDEG", phase));
+            disp(sprintf("VOLTAGE:AMPLITUDE %d", Vpp));
 
             
         end
