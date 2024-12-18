@@ -274,12 +274,12 @@ end
     %disp(array);
     
     rng(42);    % Set the random seed for reproducibility
-    %values_45 = normrnd(45, 10, [2000, 1]); % Generate values from normal distributions centered at 45, 90, and 135
-    %values_90 = normrnd(90, 10, [2000, 1]);
-    %values_135 = normrnd(135, 10, [2000, 1]);
-    %values = [values_45; values_90; values_135]; % Combine the values into a single array
+    values_45 = normrnd(50, 15, [1000, 1]); % Generate values from normal distributions centered at 45, 90, and 135
+    values_90 = normrnd(90, 10, [2000, 1]);
+    values_135 = normrnd(130, 15, [1000, 1]);
+    values = [values_45; values_90; values_135]; % Combine the values into a single array
     
-    values = normrnd(90, 1.5, [2000, 1]);
+    %values = normrnd(90, 1.5, [2000, 1]);
     values = values(values >= 40 & values <= 150); % Filter the values to be within the range [40, 150]
     shuffled_indices = randperm(length(values)); % Shuffle the values
     shuffled_values = values(shuffled_indices);
@@ -313,7 +313,7 @@ end
     
     
     %%set PB parameter
-    start_trajectory_time = 1
+    start_trajectory_time = 1;
     T = lengths(2) + spacings(2);
     num_periods = floor(start_trajectory_time/T);
     
