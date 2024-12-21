@@ -277,11 +277,13 @@ end
     markers2 = [0 0];
     trigs = [0 1]; %acquire on every "pi" pulse
     
-    reps = [1 200000];
+    reps = [1 1000000];
     repeatSeq = [1]; % how many times to repeat the block of pulses
     
-%                 tof = -1000*cmdBytes(2);
-                tof = cmdBytes(6);
+    tof_offset_l = (0:100:5000);
+    tof_offset_idx = cmdBytes(2);
+    tof_offset = tof_offset_l(tof_offset_idx);
+                tof = cmdBytes(6) + tof_offset;
                 
                 ch=1;
                 initializeAWG(ch);
