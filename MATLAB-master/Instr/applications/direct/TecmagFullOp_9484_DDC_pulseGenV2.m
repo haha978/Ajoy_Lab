@@ -471,7 +471,7 @@ end
                 
                % pause(Tmax+3);
                 
-                for n = 1:700
+                for n = 1:1600
                     
                     resp = inst.SendScpi(':DIG:ACQ:FRAM:STAT?');
                     resp = strtrim(pfunc.netStrToStr(resp.RespStr));
