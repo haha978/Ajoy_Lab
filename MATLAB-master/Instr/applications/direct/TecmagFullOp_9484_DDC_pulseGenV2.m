@@ -280,10 +280,7 @@ end
     reps = [1 1000000];
     repeatSeq = [1]; % how many times to repeat the block of pulses
     
-    tof_offset_l = (0:100:5000);
-    tof_offset_idx = cmdBytes(2);
-    tof_offset = tof_offset_l(tof_offset_idx);
-                tof = cmdBytes(6) + tof_offset;
+                tof = cmdBytes(6);
                 
                 ch=1;
                 initializeAWG(ch);
