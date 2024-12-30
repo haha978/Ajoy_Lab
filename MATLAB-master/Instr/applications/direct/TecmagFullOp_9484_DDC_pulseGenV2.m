@@ -280,7 +280,7 @@ end
     reps = [1 1000000];
     repeatSeq = [1]; % how many times to repeat the block of pulses
     
-                tof = cmdBytes(6);
+                tof = cmdBytes(6) + 2000;
                 
                 ch=1;
                 initializeAWG(ch);
