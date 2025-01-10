@@ -117,6 +117,57 @@ classdef Tektronix_AFG_31000
             fprintf(obj.gpib_obj, "TRIG:SEQ:SOUR EXT");
             
         end
+
+        function burst_mode_trig_waveform(obj, waveform, freq, Vpp, DC_offset, phase, ncycles, add_external)
+            %{
+            1. Sets Tektronix device to burst mode, waiting for a trigger
+            2. Once trigger comes, output the specified waveform (sine or square) with given Vpp, freq, phase, DC_offset, and phase
+            %}
+            
+            % Set default value for add_external if not provided
+            if nargin < 8
+                add_external = false;
+            end
+            
+            % Set trigger source
+            if add_external
+                fprintf(obj.gpib_obj, 'SOURce1:COMBine:FEED "EXTernal"');
+            end
+            
+            fprintf(obj.gpib_obj, "TRIG:SLOP POS");
+            fprintf(obj.gpib_obj, "TRIG:SEQ:SOUR EXT");
+            
+            % Set source1
+            fprintf(obj.gpib_obj, "BURSt:STATE ON");
+            fprintf(obj.gpib_obj, "SOURce1:BURSt:INFInite:REARm");
+            fprintf(obj.gpib_obj, "SOURce1:BURSt:IDLE DC");
+            fprintf(obj.gpib_obj, "SOURce1:BURSt:MODE TRIG");
+            fprintf(obj.gpib_obj, sprintf("SOURce1:BURSt:NCYCles %d", ncycles));
+            
+            % Turn on output then set the frequency and waveform
+            fprintf(obj.gpib_obj, "OUTP1:STAT ON");
+            
+            % Use switch-case to set the waveform
+            switch waveform
+                case 'SIN'
+                    fprintf(obj.gpib_obj, "FUNCTION SIN");
+                case 'SQU'
+                    fprintf(obj.gpib_obj, "FUNCTION SQU");
+                case 'TRI'
+                    fprintf(obj.gpib_obj, "FUNCTION RAMP");
+                otherwise
+                    error('Unsupported waveform type. Use "SIN" for sine wave or "SQU" for square wave.');
+            end
+            
+            fprintf(obj.gpib_obj, sprintf("FREQUENCY %d", freq));
+            fprintf(obj.gpib_obj, sprintf("VOLTAGE:AMPLITUDE %d", Vpp));
+            fprintf(obj.gpib_obj, sprintf("VOLTAGE:OFFSET %d", DC_offset));
+            fprintf(obj.gpib_obj, sprintf("PHASE:ADJUST %dDEG", phase));
+            
+            % Additional code to activate trigger (don't know why it is necessary but it is)
+            fprintf(obj.gpib_obj, "TRIG:SEQ:SOUR TIM");
+            fprintf(obj.gpib_obj, "TRIG:SEQ:SOUR EXT");
+        end
         
         function burst_mode_DC(obj, voltage)
             %{

@@ -259,7 +259,7 @@ end
     idx = cmdBytes(2);
     pi_idx = idx;
     vertices_l = [2 3 4 5 6 8 12 14];
-    vertices = 4;%vertices_l(idx);
+    vertices = 2;%vertices_l(idx);
     first_angle_arr = [0 180 90 108.47 90 130.90 90 127.12 90 114.18 122.73 114.89 90 107.22];
     %first_angle = 180/vertices;%first_angle_arr(vertices);
     
@@ -308,7 +308,7 @@ end
     trigs = [0 1]; %acquire on every "pi" pulse
     
 %     reps = [1 194174];
-    reps = [1 100000];
+    reps = [1 90000];
     repeatSeq = [1]; % how many times to repeat the block of pulses
     
     
@@ -347,12 +347,14 @@ end
 %         AC_dict.Vpp = 0.3;
 %         AC_dict.DC_offset = 0;
 %     end
+    waveformTJ          = 'SIN';    %SIN, SQU, TRI
     AC_dict.Vpp         = 0.3;
     AC_dict.DC_offset   = 0;
     AC_dict.phase       = 0;
     
-    AC_dict2.freq       = 100;%-0.5;
-    AC_dict2.Vpp        = 0.15; 
+    waveformAC          = 'SQU';
+    AC_dict2.freq       = 10;
+    AC_dict2.Vpp        = 0.3; 
     AC_dict2.DC_offset  = 0;
     AC_dict2.phase      = 0;
     
@@ -374,22 +376,32 @@ end
     fprintf("set Tektronix 31000 as burst mode \n");
     ncycles = round(reps(2)*(spacings(2) + lengths(2))*AC_dict.freq) + 10;
 
+    if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+        tek.burst_mode_trig_waveform(waveformTJ, AC_dict.freq, AC_dict.Vpp,...
+            AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+    end
+    
     %if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
     %    tek.burst_mode_trig_sinwave(AC_dict.freq, AC_dict.Vpp,...
     %        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
     %end
 
     % this makes rectangle waves:
-    if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
-        tek.burst_mode_trig_rectwave(AC_dict.freq, AC_dict.Vpp,...
-            AC_dict.DC_offset, AC_dict.phase, ncycles, true);
-    end
+    %if AC_dict.Vpp~=0 || AC_dict.DC_offset~=0
+    %    tek.burst_mode_trig_rectwave(AC_dict.freq, AC_dict.Vpp,...
+    %        AC_dict.DC_offset, AC_dict.phase, ncycles, true);
+    %end
 
     %tek2.apply_DC(DC_V);
+    %if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
+    %    tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
+    %        AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
+    %end
     if AC_dict2.Vpp~=0 || AC_dict2.DC_offset~=0
-        tek2.burst_mode_trig_sinwave(AC_dict2.freq, AC_dict2.Vpp,...
+        tek2.burst_mode_trig_waveform(waveformAC, AC_dict2.freq, AC_dict2.Vpp,...
             AC_dict2.DC_offset, AC_dict2.phase, ncycles, true);
     end
+    
     try
         tekRF.output_off();
         tekRF.init_AFG_RF(AC_dictRF.freq, AC_dictRF.Vpp, AC_dictRF.DC_offset, AC_dictRF.phase);
@@ -832,7 +844,7 @@ end
                 % Save data
                 fprintf('Writing data to Z:.....\n');
                 save(['Z:\' fn],'pulseAmp','time_axis','relPhase','AC_dict','AC_dict2','lengths',...
-                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle', 'AC_dictRF');
+                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle', 'AC_dictRF', 'waveformTJ', 'waveformAC');
                 fprintf('Save complete\n');
                 tek.output_off() 
                 tek2.output_off()
