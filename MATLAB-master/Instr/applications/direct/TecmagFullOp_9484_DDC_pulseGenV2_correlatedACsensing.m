@@ -259,7 +259,7 @@ end
     idx = cmdBytes(2);
     pi_idx = idx;
     vertices_l = [2 3 4 5 6 8 12 14];
-    vertices = 2;%vertices_l(idx);
+    vertices = 4;%vertices_l(idx);
     first_angle_arr = [0 180 90 108.47 90 130.90 90 127.12 90 114.18 122.73 114.89 90 107.22];
     %first_angle = 180/vertices;%first_angle_arr(vertices);
     
@@ -295,7 +295,7 @@ end
     analyte_freq_l = 10.^(0:0.25:4);
     %analyte_freq = analyte_freq_l(idx);
     
-    lengths = [pi/2 pi_b*2/vertices];%[pi/2 pi/2];
+    lengths = [pi/2 pi*2/vertices];%[pi/2 pi_b*2/vertices];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 90];
     mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
@@ -331,30 +331,19 @@ end
     
     %%set AC field parameter
 
-    AC_dict.freq = trajectory_freq+0.5;%+100;
+    TJidx = idx - 1;
+    disp((1.08^9)/(1.08^TJidx));
+    trajectory_freq = (1.08^9) * trajectory_freq / (1.08^idx);
+    AC_dict.freq = trajectory_freq; %trajectory_freq+0.5;
     
-%     if idx<42
-%         voltage = 0.02*(idx-5);
-%         assert(abs(voltage)<0.75, 'offset voltage too high')
-%         AC_dict.Vpp = 0.3;
-%         AC_dict.DC_offset = voltage;          % idx 0 ... 36
-%     elseif idx<93                             % idx 37 ... 88
-%         voltage = 0.02*(idx-42);
-%         assert(abs(voltage)<1.1, 'orbit voltage too high')
-%         AC_dict.Vpp = voltage;
-%         AC_dict.DC_offset = 0;
-%     else
-%         AC_dict.Vpp = 0.3;
-%         AC_dict.DC_offset = 0;
-%     end
     waveformTJ          = 'SIN';    %SIN, SQU, TRI
     AC_dict.Vpp         = 0.3;
     AC_dict.DC_offset   = 0;
     AC_dict.phase       = 0;
     
-    waveformAC          = 'SQU';
-    AC_dict2.freq       = 10;
-    AC_dict2.Vpp        = 0.3; 
+    waveformAC          = 'SIN';
+    AC_dict2.freq       = 100;
+    AC_dict2.Vpp        = 0.15; 
     AC_dict2.DC_offset  = 0;
     AC_dict2.phase      = 0;
     
