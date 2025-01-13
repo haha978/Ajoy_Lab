@@ -259,7 +259,7 @@ end
     idx = cmdBytes(2);
     pi_idx = idx;
     vertices_l = [2 3 4 5 6 8 12 14];
-    vertices = 4;%vertices_l(idx);
+    vertices = 2;%vertices_l(idx);
     first_angle_arr = [0 180 90 108.47 90 130.90 90 127.12 90 114.18 122.73 114.89 90 107.22];
     %first_angle = 180/vertices;%first_angle_arr(vertices);
     
@@ -295,14 +295,15 @@ end
     analyte_freq_l = 10.^(0:0.25:4);
     %analyte_freq = analyte_freq_l(idx);
     
-    lengths = [pi/2 pi*2/vertices];%[pi/2 pi_b*2/vertices];
+    %pi_b = pi*0.975;    %abc
+    lengths = [pi/2 pi_b*2/vertices];%[pi/2 pi_b*2/vertices];
     lengths = round_to_DAC_freq(lengths,sampleRateDAC_freq, 64);
     phases = [0 90];
     mods = [0 0]; %0 = square, 1=gauss, 2=sech, 3=hermite 
     spacings = [5e-6 spacing];
     spacings = round_to_DAC_freq(spacings, sampleRateDAC_freq, 64);
     trajectory_freq = 1/((lengths(2)+spacings(2))*vertices);
-    disp(trajectory_freq)
+    disp(trajectory_freq);
     markers = [1 1]; %always keep these on
     markers2 = [0 0];
     trigs = [0 1]; %acquire on every "pi" pulse
@@ -333,8 +334,9 @@ end
 
     TJidx = idx - 1;
     disp((1.08^9)/(1.08^TJidx));
-    trajectory_freq = (1.08^9) * trajectory_freq / (1.08^idx);
-    AC_dict.freq = trajectory_freq; %trajectory_freq+0.5;
+    %trajectory_freq = (1.08^9) * trajectory_freq / (1.08^idx);  %abc
+    trajectory_freq = trajectory_freq;
+    AC_dict.freq = trajectory_freq+0.5;
     
     waveformTJ          = 'SIN';    %SIN, SQU, TRI
     AC_dict.Vpp         = 0.3;
@@ -342,7 +344,7 @@ end
     AC_dict.phase       = 0;
     
     waveformAC          = 'SIN';
-    AC_dict2.freq       = 100;
+    AC_dict2.freq       = 20;
     AC_dict2.Vpp        = 0.15; 
     AC_dict2.DC_offset  = 0;
     AC_dict2.phase      = 0;
@@ -833,7 +835,7 @@ end
                 % Save data
                 fprintf('Writing data to Z:.....\n');
                 save(['Z:\' fn],'pulseAmp','time_axis','relPhase','AC_dict','AC_dict2','lengths',...
-                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle', 'AC_dictRF', 'waveformTJ', 'waveformAC');
+                    'phases','spacings','reps','trigs','repeatSeq','start_time','pi', 'pi_b', 'tacq', 'pi_idx', 'SL_angle', 'AC_dictRF', 'waveformTJ', 'waveformAC', 'trajectory_freq', 'vertices');
                 fprintf('Save complete\n');
                 tek.output_off() 
                 tek2.output_off()
